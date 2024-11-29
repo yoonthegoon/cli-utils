@@ -70,30 +70,6 @@ impl TryFrom<String> for Alias {
     }
 }
 
-fn add_command(name: &str, string: &str) -> Result<()> {
-    let config = get_config()?;
-    let alias_file = File::open(config.aliases_path)?;
-    add_alias(name, string, &alias_file)
-}
-
-fn edit_command(name: &str, string: &str) -> Result<()> {
-    let config = get_config()?;
-    let alias_file = File::open(config.aliases_path)?;
-    edit_alias(name, string, &alias_file)
-}
-
-fn list_command() -> Result<Vec<Alias>> {
-    let config = get_config()?;
-    let alias_file = File::open(config.aliases_path)?;
-    get_aliases(&alias_file)
-}
-
-fn remove_command(name: &str) -> Result<()> {
-    let config = get_config()?;
-    let alias_file = File::open(config.aliases_path)?;
-    remove_alias(name, &alias_file)
-}
-
 fn add_alias(name: &str, string: &str, aliases_file: &File) -> Result<()> {
     let aliases = get_aliases(aliases_file)?;
     todo!()
@@ -116,6 +92,32 @@ fn remove_alias(name: &str, aliases_file: &File) -> Result<()> {
 fn get_config() -> Result<Config> {
     let path = Path::new(env!("HOME")).join(".config/alias-manager/config.toml");
     Config::from(path)
+}
+
+// commands
+
+fn add(name: &str, string: &str) -> Result<()> {
+    let config = get_config()?;
+    let alias_file = File::open(config.aliases_path)?;
+    add_alias(name, string, &alias_file)
+}
+
+fn edit(name: &str, string: &str) -> Result<()> {
+    let config = get_config()?;
+    let alias_file = File::open(config.aliases_path)?;
+    edit_alias(name, string, &alias_file)
+}
+
+fn list() -> Result<Vec<Alias>> {
+    let config = get_config()?;
+    let alias_file = File::open(config.aliases_path)?;
+    get_aliases(&alias_file)
+}
+
+fn remove(name: &str) -> Result<()> {
+    let config = get_config()?;
+    let alias_file = File::open(config.aliases_path)?;
+    remove_alias(name, &alias_file)
 }
 
 fn main() {}
