@@ -6,32 +6,6 @@ use std::fs;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
-#[derive(Serialize, Deserialize)]
-struct Config {
-    aliases_path: PathBuf,
-    rc_path: PathBuf,
-}
-
-impl Config {
-    fn new(path: PathBuf) -> Result<Config> {
-        let aliases_path = Path::new(env!("HOME")).join(".aliases.sh");
-        let rc_path = Path::new(env!("HOME")).join(".zshrc"); // TODO: find rc file
-        let config = Config {
-            aliases_path,
-            rc_path,
-        };
-        let config_string = toml::to_string(&config).unwrap();
-        fs::write(path, config_string)?;
-        Ok(config)
-    }
-
-    fn from(path: PathBuf) -> Result<Config> {
-        let config_string = fs::read_to_string(&path)?;
-        let config: Config = toml::from_str(&config_string).unwrap_or(Config::new(path)?);
-        Ok(config)
-    }
-}
-
 struct Alias {
     name: String,
     string: String,
@@ -67,6 +41,32 @@ impl TryFrom<String> for Alias {
             .as_str()
             .to_owned();
         Ok(Alias::new(name, string))
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+struct Config {
+    aliases_path: PathBuf,
+    rc_path: PathBuf,
+}
+
+impl Config {
+    fn new(path: PathBuf) -> Result<Config> {
+        let aliases_path = Path::new(env!("HOME")).join(".aliases.sh");
+        let rc_path = Path::new(env!("HOME")).join(".zshrc"); // TODO: find rc file
+        let config = Config {
+            aliases_path,
+            rc_path,
+        };
+        let config_string = toml::to_string(&config).unwrap();
+        fs::write(path, config_string)?;
+        Ok(config)
+    }
+
+    fn from(path: PathBuf) -> Result<Config> {
+        let config_string = fs::read_to_string(&path)?;
+        let config: Config = toml::from_str(&config_string).unwrap_or(Config::new(path)?);
+        Ok(config)
     }
 }
 
