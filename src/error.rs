@@ -1,5 +1,6 @@
 #[derive(Debug)]
 pub enum Error {
+    ConfigDoesNotExist,
     Io(std::io::Error),
     OptionNone,
 }
