@@ -52,13 +52,16 @@ struct Config {
 
 impl Config {
     fn new(path: PathBuf) -> Result<Config> {
+        if !path.exists() {
+            fs::create_dir_all(&path)?;
+        }
         let aliases_path = Path::new(env!("HOME")).join(".aliases.sh");
         let rc_path = Path::new(env!("HOME")).join(".zshrc"); // TODO: find rc file
         let config = Config {
             aliases_path,
             rc_path,
         };
-        let config_string = toml::to_string(&config).unwrap();
+        let config_string = toml::to_string(&config)?;
         fs::write(path, config_string)?;
         Ok(config)
     }
