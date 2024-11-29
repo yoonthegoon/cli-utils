@@ -16,7 +16,7 @@ cargo install --git https://github.com/yoonthegoon/cli-utils.git
 
 ### alias-manager
 
-```shell
+```console
 $ alias-manager help
 Usage:
   alias-manager <command>
