@@ -1,6 +1,7 @@
 #[derive(Debug)]
 pub enum Error {
     Io(std::io::Error),
+    OptionNone,
 }
 
 impl From<std::io::Error> for Error {
