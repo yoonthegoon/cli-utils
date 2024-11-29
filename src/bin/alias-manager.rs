@@ -20,13 +20,14 @@ impl Config {
             aliases_path,
             rc_path,
         };
-        fs::write(path, toml::to_string(&config))?; // FIXME: error[E0277]: the trait bound `Result<std::string::String, toml::ser::Error>: AsRef<[u8]>` is not satisfied
+        let config_string = toml::to_string(&config).unwrap();
+        fs::write(path, config_string)?;
         Ok(config)
     }
 
     fn from(path: PathBuf) -> Result<Config> {
-        let file = File::open(&path)?.into();
-        let config: Config = toml::from_str(file).unwrap_or(Config::new(path)?);
+        let config_string = fs::read_to_string(&path)?;
+        let config: Config = toml::from_str(&config_string).unwrap_or(Config::new(path)?);
         Ok(config)
     }
 }
@@ -69,44 +70,52 @@ impl TryFrom<String> for Alias {
     }
 }
 
-fn add_command(name: &str, string: &str) -> Result<String> {
-    todo!()
+fn add_command(name: &str, string: &str) -> Result<()> {
+    let config = get_config()?;
+    let alias_file = File::open(config.aliases_path)?;
+    add_alias(name, string, &alias_file)
 }
 
 fn edit_command(name: &str, string: &str) -> Result<()> {
-    todo!()
+    let config = get_config()?;
+    let alias_file = File::open(config.aliases_path)?;
+    edit_alias(name, string, &alias_file)
 }
 
 fn list_command() -> Result<Vec<Alias>> {
-    todo!()
+    let config = get_config()?;
+    let alias_file = File::open(config.aliases_path)?;
+    get_aliases(&alias_file)
 }
 
 fn remove_command(name: &str) -> Result<()> {
+    let config = get_config()?;
+    let alias_file = File::open(config.aliases_path)?;
+    remove_alias(name, &alias_file)
+}
+
+fn add_alias(name: &str, string: &str, aliases_file: &File) -> Result<()> {
+    let aliases = get_aliases(aliases_file)?;
     todo!()
 }
 
-fn add_helper(name: &str, string: &str, aliases_file: File) -> Result<String> {
+fn edit_alias(name: &str, string: &str, aliases_file: &File) -> Result<()> {
+    let aliases = get_aliases(aliases_file)?;
     todo!()
 }
 
-fn edit_helper(name: &str, string: &str, aliases_file: File) -> Result<()> {
+fn get_aliases(aliases_file: &File) -> Result<Vec<Alias>> {
     todo!()
 }
 
-fn list_helper(aliases_file: File) -> Result<Vec<Alias>> {
+fn remove_alias(name: &str, aliases_file: &File) -> Result<()> {
+    let aliases = get_aliases(aliases_file)?;
     todo!()
 }
 
-fn remove_helper(name: &str, aliases_file: File) -> Result<()> {
-    todo!()
-}
-
-fn get_aliases_file() -> Result<File> {
-    let conf_path = Path::new(env!("HOME")).join(".config/am/config.toml");
-    if !conf_path.exists() {
-        return Err(Error::ConfigDoesNotExist);
-    }
-    todo!()
+fn get_config() -> Result<Config> {
+    let path = Path::new(env!("HOME")).join(".config/alias-manager/config.toml");
+    Config::from(path)
 }
 
 fn main() {}
