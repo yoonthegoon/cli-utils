@@ -1,10 +1,17 @@
 # cli-utils
 
+Command line interface utilities
+
+This is a collection of some small executables I wrote that I find useful.
+They're all relatively small and share a lot of the same dependencies, so I bundled them all together in this
+repository.
+If you find that you, for some reason, don't want some but want others, simply run `rm ~/.cargo/bin/<bin>`.
+
 ## Table of Contents
 
 - [Installation](#installation)
 - [Usage](#usage)
-  - [alias-manager](#alias-manager)
+    - [alias-manager](#alias-manager)
 
 ## Installation
 
@@ -18,14 +25,17 @@ cargo install --git https://github.com/yoonthegoon/cli-utils.git
 
 ```console
 $ alias-manager help
-Usage:
-  alias-manager <command>
+Usage: alias-manager <COMMAND>
 
-Example usage:
-  alias-manager add <name> <string>
-  alias-manager edit <name> <string>
-  alias-manager list
-  alias-manager remove <name>
+Commands:
+  add     Add a managed alias
+  edit    Edit a managed alias
+  list    List all managed aliases
+  remove  Remove a managed alias
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help  Print help
 
 $ alias-manager list
 Name | String
