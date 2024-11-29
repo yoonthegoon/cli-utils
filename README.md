@@ -29,7 +29,7 @@ Example usage:
 
 $ alias-manager list
 Name | String
------+---------------------------
+-----+--------------------------
 am   | alias-manager
 act  | source venv/bin/activate
 echo | cowsay
@@ -43,6 +43,6 @@ $ am remove echo
 $ am list
 name | string
 -----+---------------------------
-act  | source venv/bin/activate
+act  | source .venv/bin/activate
 venv | python3 -m venv .venv
 ```
