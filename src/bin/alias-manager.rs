@@ -104,7 +104,8 @@ fn edit_alias(name: &str, string: &str, aliases: &mut Vec<Alias>) {
     add_alias(name, string, aliases);
 }
 
-fn get_aliases(aliases_file: &File) -> Result<Vec<Alias>> {
+fn get_aliases(config: &Config) -> Result<Vec<Alias>> {
+    let aliases_file = File::open(&config.aliases_path)?;
     let mut aliases: Vec<Alias> = vec![];
     let reader = BufReader::new(aliases_file);
     for result in reader.lines() {
@@ -124,30 +125,31 @@ fn get_config() -> Result<Config> {
     Config::from(path)
 }
 
+fn set_aliases(aliases: &mut Vec<Alias>, config: Config) -> Result<()> {
+    todo!()
+}
+
 // commands
 
 fn add(name: &str, string: &str) -> Result<()> {
     let config = get_config()?;
-    let alias_file = File::open(config.aliases_path)?;
-    let aliases = &mut get_aliases(&alias_file)?;
+    let aliases = &mut get_aliases(&config)?;
     add_alias(name, string, aliases);
-    // TODO write to alias_file
+    set_aliases(aliases, config)?;
     Ok(())
 }
 
 fn edit(name: &str, string: &str) -> Result<()> {
     let config = get_config()?;
-    let alias_file = File::open(config.aliases_path)?;
-    let aliases = &mut get_aliases(&alias_file)?;
+    let aliases = &mut get_aliases(&config)?;
     edit_alias(name, string, aliases);
-    // TODO write to alias_file
+    set_aliases(aliases, config)?;
     Ok(())
 }
 
 fn list() -> Result<Vec<Alias>> {
     let config = get_config()?;
-    let alias_file = File::open(config.aliases_path)?;
-    let aliases = get_aliases(&alias_file)?;
+    let aliases = get_aliases(&config)?;
     let mut table = Table::new();
     table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
     table.set_titles(row!["Name", "String"]);
@@ -155,16 +157,14 @@ fn list() -> Result<Vec<Alias>> {
         table.add_row(row![alias.name, alias.string]);
     }
     table.printstd();
-    // TODO write to alias_file
     Ok(aliases)
 }
 
 fn remove(name: &str) -> Result<()> {
     let config = get_config()?;
-    let alias_file = File::open(config.aliases_path)?;
-    let aliases = &mut get_aliases(&alias_file)?;
+    let aliases = &mut get_aliases(&config)?;
     remove_alias(name, aliases);
-    // TODO write to alias_file
+    set_aliases(aliases, config)?;
     Ok(())
 }
 
