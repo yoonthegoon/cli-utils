@@ -132,8 +132,12 @@ fn list() -> Result<Vec<Alias>> {
 
 fn remove(name: &str) -> Result<()> {
     let aliases = &mut get_aliases()?;
+    let len = aliases.len();
     remove_alias(name, aliases);
     set_aliases(aliases)?;
+    if aliases.len() == len {
+        return Err(Error::Generic("no alias removed".to_string()));
+    }
     println!("unalias {}", name);
     Ok(())
 }
