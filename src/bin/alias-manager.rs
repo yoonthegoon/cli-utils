@@ -1,13 +1,12 @@
-use clap::{Args, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use cli_utils::error::Error;
 use cli_utils::result::Result;
 use prettytable::{format, row, Table};
 use regex::Regex;
-use serde::{Deserialize, Serialize};
 use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 struct Alias {
     name: String,
@@ -15,7 +14,9 @@ struct Alias {
 }
 
 impl Alias {
-    fn new(name: String, string: String) -> Alias {
+    fn new(name: &str, string: &str) -> Alias {
+        let name = name.to_string();
+        let string = string.to_string();
         Alias { name, string }
     }
 }
@@ -33,16 +34,8 @@ impl TryFrom<String> for Alias {
         // https://github.com/bminor/bash/blob/ec8113b9861375e4e17b3307372569d429dec814/general.c#L412-L426
         let re = Regex::new(r#"^alias (?<name>[^\s/\\$`=|&;()<>'"]+)="(?<string>.*)"$"#).unwrap();
         let caps = re.captures(&value).ok_or(Error::OptionNone)?;
-        let name = caps
-            .name("name")
-            .ok_or(Error::OptionNone)?
-            .as_str()
-            .to_owned();
-        let string = caps
-            .name("string")
-            .ok_or(Error::OptionNone)?
-            .as_str()
-            .to_owned();
+        let name = caps.name("name").ok_or(Error::OptionNone)?.as_str();
+        let string = caps.name("string").ok_or(Error::OptionNone)?.as_str();
         Ok(Alias::new(name, string))
     }
 }
@@ -65,37 +58,8 @@ enum Commands {
     Remove { name: String },
 }
 
-#[derive(Serialize, Deserialize)]
-struct Config {
-    aliases_path: PathBuf,
-    rc_path: PathBuf,
-}
-
-impl Config {
-    fn new(path: PathBuf) -> Result<Config> {
-        if !path.exists() {
-            fs::create_dir_all(&path)?;
-        }
-        let aliases_path = Path::new(env!("HOME")).join(".aliases.sh");
-        let rc_path = Path::new(env!("HOME")).join(".zshrc"); // TODO: find rc file
-        let config = Config {
-            aliases_path,
-            rc_path,
-        };
-        let config_string = toml::to_string(&config)?;
-        fs::write(path, config_string)?;
-        Ok(config)
-    }
-
-    fn from(path: PathBuf) -> Result<Config> {
-        let config_string = fs::read_to_string(&path)?;
-        let config: Config = toml::from_str(&config_string).unwrap_or(Config::new(path)?);
-        Ok(config)
-    }
-}
-
 fn add_alias(name: &str, string: &str, aliases: &mut Vec<Alias>) {
-    let alias = Alias::new(name.to_owned(), string.to_owned());
+    let alias = Alias::new(name, string);
     aliases.push(alias);
 }
 
@@ -104,8 +68,13 @@ fn edit_alias(name: &str, string: &str, aliases: &mut Vec<Alias>) {
     add_alias(name, string, aliases);
 }
 
-fn get_aliases(config: &Config) -> Result<Vec<Alias>> {
-    let aliases_file = File::open(&config.aliases_path)?;
+fn remove_alias(name: &str, aliases: &mut Vec<Alias>) {
+    aliases.retain(|a| a.name != name);
+}
+
+fn get_aliases() -> Result<Vec<Alias>> {
+    let aliases_path = Path::new(env!("HOME")).join(".aliases.sh");
+    let aliases_file = File::open(&aliases_path)?;
     let mut aliases: Vec<Alias> = vec![];
     let reader = BufReader::new(aliases_file);
     for result in reader.lines() {
@@ -116,40 +85,41 @@ fn get_aliases(config: &Config) -> Result<Vec<Alias>> {
     Ok(aliases)
 }
 
-fn remove_alias(name: &str, aliases: &mut Vec<Alias>) {
-    aliases.retain(|a| a.name != name);
+fn set_aliases(aliases: &mut Vec<Alias>) -> Result<()> {
+    let aliases_path = Path::new(env!("HOME")).join(".aliases.sh");
+    aliases.sort_by(|a, b| a.name.cmp(&b.name));
+    let mut alias_strings: Vec<String> = vec![];
+    for alias in aliases.iter() {
+        let name = &alias.name;
+        let string = &alias.string;
+        let alias = Alias::new(name, string);
+        alias_strings.push(alias.into());
+    }
+    let aliases_string = alias_strings.join("\n");
+    fs::write(&aliases_path, aliases_string)?;
+    Ok(())
 }
-
-fn get_config() -> Result<Config> {
-    let path = Path::new(env!("HOME")).join(".config/alias-manager/config.toml");
-    Config::from(path)
-}
-
-fn set_aliases(aliases: &mut Vec<Alias>, config: Config) -> Result<()> {
-    todo!()
-}
-
-// commands
 
 fn add(name: &str, string: &str) -> Result<()> {
-    let config = get_config()?;
-    let aliases = &mut get_aliases(&config)?;
+    let aliases = &mut get_aliases()?;
     add_alias(name, string, aliases);
-    set_aliases(aliases, config)?;
+    set_aliases(aliases)?;
+    let alias_string: String = Alias::new(name, string).into();
+    println!("{}", alias_string);
     Ok(())
 }
 
 fn edit(name: &str, string: &str) -> Result<()> {
-    let config = get_config()?;
-    let aliases = &mut get_aliases(&config)?;
+    let aliases = &mut get_aliases()?;
     edit_alias(name, string, aliases);
-    set_aliases(aliases, config)?;
+    set_aliases(aliases)?;
+    let alias_string: String = Alias::new(name, string).into();
+    println!("{}", alias_string);
     Ok(())
 }
 
 fn list() -> Result<Vec<Alias>> {
-    let config = get_config()?;
-    let aliases = get_aliases(&config)?;
+    let aliases = get_aliases()?;
     let mut table = Table::new();
     table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
     table.set_titles(row!["Name", "String"]);
@@ -161,10 +131,10 @@ fn list() -> Result<Vec<Alias>> {
 }
 
 fn remove(name: &str) -> Result<()> {
-    let config = get_config()?;
-    let aliases = &mut get_aliases(&config)?;
+    let aliases = &mut get_aliases()?;
     remove_alias(name, aliases);
-    set_aliases(aliases, config)?;
+    set_aliases(aliases)?;
+    println!("unalias {}", name);
     Ok(())
 }
 

@@ -23,6 +23,12 @@ cargo install --git https://github.com/yoonthegoon/cli-utils.git
 
 ### alias-manager
 
+Make sure you've added `source ~/.aliases.sh` to either your `~/.bashrc` or `~/.zshrc` file.
+It will also be convenient to run `alias-manager add am alias-manager`.
+
+The outputs of `add`, `edit`, and `remove` are the commands you'd likely want to run to perform the desired action in
+the current terminal session.
+
 ```console
 $ alias-manager help
 Usage: alias-manager <COMMAND>
@@ -45,10 +51,13 @@ act  | source venv/bin/activate
 echo | cowsay
 
 $ am add venv "python3 -m venv .venv"
+alias venv="python3 -m venv .venv"
 
 $ am edit act "source .venv/bin/activate"
+alias act="source .venv/bin/activate"
 
 $ am remove echo
+unalias echo
 
 $ am list
 name | string
@@ -56,3 +65,24 @@ name | string
 act  | source .venv/bin/activate
 venv | python3 -m venv .venv
 ```
+
+If you'd like to automatically run the outputs of `add`, `edit`, and `remove`, I suggest adding the following to your
+`~/.bashrc` or `~/.zshrc` file:
+
+```shell
+function alias-manager-wrapper() {
+  local output
+  output=$(alias-manager "$@")
+  if [[ "$1" =~ ^(add|edit|remove)$ ]]; then
+    if [ $? -eq 0 ]; then
+      eval "$output"
+      return
+    fi
+  fi
+  echo "$output"
+}
+```
+
+and run `am edit am alias-manager-wrapper`.
+
+Now `add`, `edit`, and `remove` won't output anything on success, and the results will be immediate.
